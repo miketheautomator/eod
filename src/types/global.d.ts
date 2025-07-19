@@ -1,5 +1,7 @@
+import { ObjectId } from 'mongodb'
+
 export interface Engineer {
-  _id?: string
+  _id?: string | ObjectId
   name: string
   email: string
   photo?: string
@@ -30,29 +32,34 @@ export interface Engineer {
 }
 
 export interface Appointment {
-  _id?: string
+  _id?: string | ObjectId
   engineerId: string
+  engineerName?: string
+  engineerRate?: number
   clientName: string
   clientEmail: string
-  clientPhone: string
-  date: Date
-  startTime: string
-  endTime: string
-  description: string
+  clientPhone?: string
+  companyName?: string
+  date: Date | string
+  startTime?: string
+  endTime?: string
+  description?: string
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed'
-  location: {
+  location?: {
     zipCode: string
     coordinates: {
       lat: number
       lng: number
     }
   }
-  createdAt: Date
-  updatedAt: Date
+  type?: string
+  isASAP?: boolean
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export interface EarlyAccessRequest {
-  _id?: string
+  _id?: string | ObjectId
   email: string
   zipCode: string
   requestedSkills?: string[]

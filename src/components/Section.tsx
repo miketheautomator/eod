@@ -30,13 +30,13 @@ export default function Section({
   return (
     <motion.section
       id={id}
-      className={`min-h-screen w-full flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 ${getBackgroundClass()} ${className}`}
+      className={`h-screen w-full flex flex-col justify-center items-center px-4 sm:px-6 lg:px-8 ${getBackgroundClass()} ${className}`}
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-100px" }}
       transition={{ duration: 0.8, ease: "easeOut" }}
     >
-      <div className="max-w-7xl w-full mx-auto">
+      <div className="max-w-7xl w-full mx-auto h-full flex flex-col justify-center">
         {children}
       </div>
     </motion.section>

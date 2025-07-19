@@ -87,9 +87,11 @@ export async function POST(request: NextRequest) {
       name,
       email,
       skills,
-      hourlyRate,
+      rate: hourlyRate,
       location,
-      availability: availability || []
+      availability: availability || [],
+      radius: 25, // Default radius
+      status: 'active' // Default status
     })
 
     return NextResponse.json({

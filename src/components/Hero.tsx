@@ -3,6 +3,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Code, Zap, Users } from 'lucide-react'
+import { scrollToNextSection } from './ScrollSnapWrapper'
 
 export default function Hero() {
   return (
@@ -88,12 +89,7 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.6 }}
         >
           <button 
-            onClick={() => {
-              const bookingSection = document.getElementById('booking')
-              if (bookingSection) {
-                bookingSection.scrollIntoView({ behavior: 'smooth' })
-              }
-            }}
+            onClick={scrollToNextSection}
             className="group bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 flex items-center space-x-2 mx-auto"
           >
             <span>Find an Engineer</span>

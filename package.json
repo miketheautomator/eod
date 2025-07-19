@@ -20,6 +20,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-scroll": "^1.9.3",
+    "react-scroll-snap-anime-slider": "^1.5.3",
     "zod": "^4.0.5"
   },
   "devDependencies": {

@@ -74,7 +74,7 @@ export class AppointmentsModel {
     endTime?: string;
     description?: string;
     isASAP: boolean;
-    location?: any;
+    location?: { zipCode: string; coordinates: { lat: number; lng: number } };
   }) {
     const collection = await this.getCollection()
     const now = new Date()
@@ -93,6 +93,11 @@ export class AppointmentsModel {
     for (const appointment of existingAppointments) {
       const existingStart = appointment.startTime
       const existingEnd = appointment.endTime
+      
+      // Skip if appointment times are undefined (e.g., ASAP requests)
+      if (!existingStart || !existingEnd) {
+        continue
+      }
       
       // Check for time overlap
       if (

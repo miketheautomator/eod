@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { getCurrentLocation } from '@/lib/geolocation'
 import { Engineer } from '@/types/global'
-import { MapPin, DollarSign, Star, User } from 'lucide-react'
+import { MapPin, DollarSign, Star, User, ArrowRight } from 'lucide-react'
 import { validateEmail, validatePhone, validateName, validateCompany, validateDescription } from '@/lib/validation'
 import Modal from './Modal'
+import EngineerCard from './EngineerCard'
 
 interface BookingState {
   location: {
@@ -209,7 +210,7 @@ export default function BookingSection() {
         if (error.details) {
           // Show validation errors
           const newErrors = { clientName: '', clientEmail: '', clientPhone: '', companyName: '', description: '' }
-          error.details.forEach((detail: any) => {
+          error.details.forEach((detail: { field: string; message: string }) => {
             if (detail.field in newErrors) {
               newErrors[detail.field as keyof typeof newErrors] = detail.message
             }
@@ -431,151 +432,27 @@ export default function BookingSection() {
       </motion.div>
 
       {!state.showBookingForm ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
           {state.engineers.slice(0, screenSize.maxEngineers).map((engineer, index) => (
-            <motion.div
-              key={engineer._id}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: engineer.isLocal ? 1 : 0.4, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className={`w-full min-w-0 h-[700px] border rounded-3xl overflow-hidden transition-all duration-300 shadow-xl ${
-                engineer.isLocal 
-                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 cursor-pointer' 
-                  : 'bg-gray-900 border-gray-800 cursor-not-allowed grayscale'
-              }`}
-            >
-              <div className="flex flex-col h-full relative">
-                {/* Photo Section */}
-                <div className="relative h-64">
-                  {engineer.photo ? (
-                    <img 
-                      src={`/${engineer.photo}`} 
-                      alt={engineer.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gray-700 flex items-center justify-center">
-                      <User className="w-24 h-24 text-gray-300" />
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
-                    <div className="flex items-center text-white">
-                      <span className="text-lg font-bold">${(engineer.rate / 60).toFixed(1)}/min</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content Section */}
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="space-y-3 flex-1">
-                    <div className="space-y-1">
-                      <div className="flex items-baseline justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold text-white">{engineer.name}</h3>
-                          <div className="flex items-center text-gray-400 text-sm">
-                            <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
-                            <span className="truncate">{engineer.location.address}</span>
-                            {engineer.distance && (
-                              <span className={`ml-2 px-2 py-1 rounded-full text-xs flex-shrink-0 ${
-                                engineer.isLocal 
-                                  ? 'bg-green-500/20 text-green-400' 
-                                  : 'bg-orange-500/20 text-orange-400'
-                              }`}>
-                                {engineer.distance.toFixed(0)}mi
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {engineer.yearsExperience && (
-                          <div className="flex flex-col items-center">
-                            <div className="flex items-center justify-center w-10 h-10 bg-blue-500/20 border border-blue-400/30 rounded-full">
-                              <span className="text-sm font-bold text-blue-300">{engineer.yearsExperience}</span>
-                            </div>
-                            <span className="text-xs text-blue-400">exp</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {engineer.bio && (
-                      <p className="text-gray-300 text-sm leading-relaxed">
-                        {engineer.bio}
-                      </p>
-                    )}
-
-
-                    {engineer.skills && engineer.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {engineer.skills.slice(0, 6).map((skill, i) => (
-                          <span key={i} className="px-3 py-1.5 bg-green-500/20 text-green-300 text-xs rounded-full font-medium">
-                            {skill}
-                          </span>
-                        ))}
-                        {engineer.skills.length > 6 && (
-                          <span className="px-3 py-1.5 bg-gray-500/20 text-gray-400 text-xs rounded-full">
-                            +{engineer.skills.length - 6}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {engineer.services && engineer.services.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">
-                          I can help with
-                        </h4>
-                        <div className="flex flex-wrap gap-1.5 max-h-12 overflow-hidden">
-                          {engineer.services.slice(0, 8).map((service, i) => (
-                            <span key={i} className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full font-medium">
-                              {service}
-                            </span>
-                          ))}
-                          {engineer.services.length > 8 && (
-                            <span className="px-2 py-1 bg-gray-500/20 text-gray-400 text-xs rounded-full">
-                              +{engineer.services.length - 8}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Button anchored to bottom */}
-                  <div className="mt-auto pt-4">
-                    <button
-                      onClick={() => {
-                        if (engineer.isLocal) {
-                          setState(prev => ({ 
-                            ...prev, 
-                            selectedEngineer: engineer, 
-                            showBookingForm: true 
-                          }))
-                        }
-                      }}
-                      disabled={!engineer.isLocal}
-                      className={`w-full py-4 rounded-xl font-bold text-sm transition-all duration-300 transform ${engineer.isLocal ? 'hover:scale-105 active:scale-95 hover:shadow-lg' : ''} ${
-                        engineer.isLocal
-                          ? 'bg-white text-gray-900 hover:bg-gray-100 cursor-pointer'
-                          : 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                      }`}
-                    >
-                      {engineer.isLocal 
-                        ? `Book ${engineer.name.split(' ')[0]} Now`
-                        : `Not Available in Your Area`
-                      }
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+            <EngineerCard
+              key={engineer._id?.toString()}
+              engineer={engineer}
+              index={index}
+              onSelect={(engineer) => {
+                setState(prev => ({ 
+                  ...prev, 
+                  selectedEngineer: engineer, 
+                  showBookingForm: true 
+                }))
+              }}
+            />
           ))}
         </div>
       ) : (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-2xl mx-auto bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden"
+          className="max-w-2xl mx-auto bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden booking-form"
         >
           {/* Header */}
           <div className="bg-gray-800 p-6 text-center">

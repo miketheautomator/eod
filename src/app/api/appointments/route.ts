@@ -111,8 +111,10 @@ export async function POST(request: NextRequest) {
 
       // Check if engineer is available during requested hours
       const dayOfWeek = appointmentDate.getDay()
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      const dayName = dayNames[dayOfWeek]
       const engineerAvailability = engineer.availability.find(
-        (avail) => avail.dayOfWeek === dayOfWeek
+        (avail) => avail.day === dayName
       )
 
       if (!engineerAvailability) {

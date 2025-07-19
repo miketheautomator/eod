@@ -1,24 +1,26 @@
+import ScrollSnapWrapper from '@/components/ScrollSnapWrapper'
 import Section from '@/components/Section'
 import Hero from '@/components/Hero'
-import BookingSection from '@/components/BookingSection'
-import EarlyAccess from '@/components/EarlyAccess'
+import CTASection from '@/components/CTASection'
 import Footer from '@/components/Footer'
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-900">
+    <ScrollSnapWrapper>
       {/* Hero Section */}
       <Section id="hero" background="gradient">
         <Hero />
       </Section>
 
-      {/* Booking Section */}
-      <Section id="booking" background="dark">
-        <BookingSection />
+      {/* CTA Section */}
+      <Section background="dark">
+        <CTASection />
       </Section>
 
       {/* Footer */}
-      <Footer />
-    </div>
+      <Section background="darker">
+        <Footer />
+      </Section>
+    </ScrollSnapWrapper>
   )
 }
