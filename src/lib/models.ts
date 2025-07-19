@@ -1,5 +1,6 @@
 import clientPromise from './mongodb'
 import { Engineer, Appointment, EarlyAccessRequest } from '@/types/global'
+import { ObjectId } from 'mongodb'
 
 const DATABASE_NAME = process.env.MONGODB_DATABASE || 'tilt-engineer-on-demand'
 
@@ -16,23 +17,17 @@ export class EngineersModel {
 
   static async findByLocation(lat: number, lng: number, radius: number) {
     const collection = await this.getCollection()
-    // Get all engineers and filter by distance calculation
     return collection.find({}).toArray()
   }
 
   static async findById(id: string) {
     const collection = await this.getCollection()
-    return collection.findOne({ _id: id })
+    return collection.findOne({ _id: new ObjectId(id) })
   }
 
-  static async create(engineer: Omit<Engineer, '_id' | 'createdAt' | 'updatedAt'>) {
+  static async create(engineer: Omit<Engineer, '_id'>) {
     const collection = await this.getCollection()
-    const now = new Date()
-    return collection.insertOne({
-      ...engineer,
-      createdAt: now,
-      updatedAt: now
-    })
+    return collection.insertOne(engineer)
   }
 }
 
@@ -61,6 +56,32 @@ export class AppointmentsModel {
     const now = new Date()
     return collection.insertOne({
       ...appointment,
+      createdAt: now,
+      updatedAt: now
+    })
+  }
+
+  static async createBookingRequest(request: {
+    engineerId: string;
+    engineerName: string;
+    engineerRate: number;
+    clientName: string;
+    clientEmail: string;
+    clientPhone?: string;
+    companyName?: string;
+    date: string;
+    startTime?: string;
+    endTime?: string;
+    description?: string;
+    isASAP: boolean;
+    location?: any;
+  }) {
+    const collection = await this.getCollection()
+    const now = new Date()
+    return collection.insertOne({
+      ...request,
+      status: 'pending',
+      type: 'booking_request',
       createdAt: now,
       updatedAt: now
     })

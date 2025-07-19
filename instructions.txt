@@ -31,4 +31,5 @@ Make it pretty -  think the Stripe landing pages, but in Dark mode and with our 
 -- if we have an egineer in the engineers collection with a location and within the range of the engineer's preference - they see the booking section. Otherwise they see a request early access CTA with email/db storage of the info we collect.
 - make it clean - do not do stupid borders everywhere. this is for people hiring engineers, not engineers! make it beautiful
 
+THIS IS A FUCKING APP FOR CO WORKING SPACES! WE HAVE ENGINEERS IN THESE SPACES!!!!!!!!!!!!!!!!!!!! DONT MAKE IT SOUND LIKE SOMEONE WILL HAVE TO TRAVEL TO HELP!
 

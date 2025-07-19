@@ -2,23 +2,31 @@ export interface Engineer {
   _id?: string
   name: string
   email: string
+  photo?: string
   skills: string[]
-  hourlyRate: number
+  rate: number
   location: {
     zipCode: string
+    address: string
     coordinates: {
       lat: number
       lng: number
     }
   }
   availability: {
-    dayOfWeek: number // 0-6 (Sunday-Saturday)
-    startTime: string // "09:00"
-    endTime: string // "17:00"
+    day: string
+    startTime: string
+    endTime: string
   }[]
-  isActive: boolean
-  createdAt: Date
-  updatedAt: Date
+  radius: number
+  status: string
+  yearsExperience?: number | string
+  companies?: string[]
+  bio?: string
+  specialties?: string[]
+  services?: string[]
+  distance?: number
+  isLocal?: boolean
 }
 
 export interface Appointment {

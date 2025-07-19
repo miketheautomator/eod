@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://cloudconvert.com/
+HostUrl=https://eu-central.storage.cloudconvert.com/tasks/7589efb1-1251-41f9-ae0c-00e233e5f8ea/mike-headshot.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cloudconvert-production%2F20250719%2Ffra%2Fs3%2Faws4_request&X-Amz-Date=20250719T142537Z&X-Amz-Expires=86400&X-Amz-Signature=2c23e994b4e48f3df0f0ac99df9764b714aa2b66c4a65dc4dfd3aa2cb43bf6e8&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3D%22mike-headshot.webp%22&response-content-type=image%2Fwebp&x-id=GetObject

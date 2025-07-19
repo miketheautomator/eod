@@ -31,9 +31,10 @@ fi
 # Read prompt from file
 PROMPT=$(cat "$PROMPT_FILE")
 
-# Create git worktree from main branch
-echo "Creating git worktree: $WORKTREE_NAME from main"
-git worktree add "$WORKTREE_NAME" main
+# Create git worktree with new branch from main
+BRANCH_NAME="flash-branch-$(date +%s)"
+echo "Creating git worktree: $WORKTREE_NAME with branch $BRANCH_NAME from main"
+git worktree add -b "$BRANCH_NAME" "$WORKTREE_NAME" main
 
 # Change to worktree directory
 cd "$WORKTREE_NAME"
@@ -42,5 +43,5 @@ echo "Running Claude autonomously in worktree: $WORKTREE_NAME"
 echo "Prompt file: $PROMPT_FILE"
 echo "----------------------------------------"
 
-# Run Claude with the prompt in non-interactive mode
-claude --print --permission-mode bypassPermissions "$PROMPT"
+# Run Claude with the prompt in non-interactive mode and ensure output is visible
+echo "$PROMPT" | claude --print --permission-mode bypassPermissions 2>&1

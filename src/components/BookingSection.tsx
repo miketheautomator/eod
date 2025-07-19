@@ -5,6 +5,8 @@ import { motion } from 'framer-motion'
 import { getCurrentLocation } from '@/lib/geolocation'
 import { Engineer } from '@/types/global'
 import { MapPin, DollarSign, Star, User } from 'lucide-react'
+import { validateEmail, validatePhone, validateName, validateCompany, validateDescription } from '@/lib/validation'
+import Modal from './Modal'
 
 interface BookingState {
   location: {
@@ -19,6 +21,7 @@ interface BookingState {
   isLoading: boolean
   error: string | null
   showBookingForm: boolean
+  isSubmitting: boolean
 }
 
 export default function BookingSection() {
@@ -30,7 +33,8 @@ export default function BookingSection() {
     selectedTime: '',
     isLoading: false,
     error: null,
-    showBookingForm: false
+    showBookingForm: false,
+    isSubmitting: false
   })
 
   const [showLocationPrompt, setShowLocationPrompt] = useState(false)
@@ -40,12 +44,45 @@ export default function BookingSection() {
     clientName: '',
     clientEmail: '',
     clientPhone: '',
+    companyName: '',
     description: ''
+  })
+
+  const [validationErrors, setValidationErrors] = useState({
+    clientName: '',
+    clientEmail: '',
+    clientPhone: '',
+    companyName: '',
+    description: ''
+  })
+
+  const [modal, setModal] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info'
+  })
+
+  const [screenSize, setScreenSize] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1280,
+    maxEngineers: 3
   })
 
   useEffect(() => {
     detectLocationAndFetchEngineers()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const updateScreenSize = () => {
+      const width = window.innerWidth
+      const maxEngineers = width <= 640 ? 1 : width < 1280 ? 2 : 3
+      setScreenSize({ width, maxEngineers })
+    }
+
+    updateScreenSize()
+    window.addEventListener('resize', updateScreenSize)
+    return () => window.removeEventListener('resize', updateScreenSize)
+  }, [])
 
   const detectLocationAndFetchEngineers = async () => {
     console.log('detectLocationAndFetchEngineers called')
@@ -75,7 +112,7 @@ export default function BookingSection() {
       const params = new URLSearchParams({
         lat: location.latitude.toString(),
         lng: location.longitude.toString(),
-        radius: '50'
+        radius: '15'
       })
 
       console.log('Fetching engineers with params:', params.toString())
@@ -120,7 +157,10 @@ export default function BookingSection() {
   }
 
   const handleBooking = async () => {
-    if (!state.selectedEngineer || !state.selectedDate || !state.selectedTime) return
+    if (!state.selectedEngineer || !state.selectedDate) return
+    if (state.selectedDate !== 'asap' && !state.selectedTime) return
+
+    setState(prev => ({ ...prev, isSubmitting: true }))
 
     try {
       const response = await fetch('/api/appointments', {
@@ -128,33 +168,71 @@ export default function BookingSection() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           engineerId: state.selectedEngineer._id,
+          engineerName: state.selectedEngineer.name,
+          engineerRate: state.selectedEngineer.rate,
           clientName: formData.clientName,
           clientEmail: formData.clientEmail,
-          clientPhone: formData.clientPhone,
+          clientPhone: formData.clientPhone.replace(/\D/g, ''), // Send unformatted phone number
+          companyName: formData.companyName,
           date: state.selectedDate,
           startTime: state.selectedTime,
-          endTime: addHour(state.selectedTime),
+          endTime: state.selectedTime ? addHour(state.selectedTime) : undefined,
           description: formData.description,
           location: state.location
         })
       })
 
       if (response.ok) {
-        alert('Booking request submitted successfully!')
+        setModal({
+          isOpen: true,
+          title: 'Booking Submitted!',
+          message: 'Your booking request has been submitted successfully! We will contact you shortly to confirm the details.',
+          type: 'success'
+        })
         setState(prev => ({ 
           ...prev, 
           showBookingForm: false,
           selectedEngineer: null,
           selectedDate: '',
-          selectedTime: ''
+          selectedTime: '',
+          isSubmitting: false
         }))
-        setFormData({ clientName: '', clientEmail: '', clientPhone: '', description: '' })
+        setFormData({ 
+          clientName: '', 
+          clientEmail: '', 
+          clientPhone: '', 
+          companyName: '',
+          description: '' 
+        })
       } else {
         const error = await response.json()
-        alert(`Booking failed: ${error.error}`)
+        if (error.details) {
+          // Show validation errors
+          const newErrors = { clientName: '', clientEmail: '', clientPhone: '', companyName: '', description: '' }
+          error.details.forEach((detail: any) => {
+            if (detail.field in newErrors) {
+              newErrors[detail.field as keyof typeof newErrors] = detail.message
+            }
+          })
+          setValidationErrors(newErrors)
+        } else {
+          setModal({
+            isOpen: true,
+            title: 'Booking Failed',
+            message: error.message || error.error || 'Unable to submit booking request',
+            type: 'error'
+          })
+        }
       }
     } catch {
-      alert('Failed to submit booking request')
+      setModal({
+        isOpen: true,
+        title: 'Network Error',
+        message: 'Failed to submit booking request. Please check your connection and try again.',
+        type: 'error'
+      })
+    } finally {
+      setState(prev => ({ ...prev, isSubmitting: false }))
     }
   }
 
@@ -162,6 +240,71 @@ export default function BookingSection() {
     const [hours, minutes] = time.split(':').map(Number)
     const newHours = hours + 1
     return `${newHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
+  }
+
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-numeric characters
+    const phoneNumber = value.replace(/\D/g, '')
+    
+    // Format as (XXX) XXX-XXXX
+    if (phoneNumber.length <= 3) {
+      return phoneNumber
+    } else if (phoneNumber.length <= 6) {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`
+    } else {
+      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`
+    }
+  }
+
+  const handleFieldChange = (field: string, value: string) => {
+    let processedValue = value
+    
+    // Special handling for phone number formatting
+    if (field === 'clientPhone') {
+      processedValue = formatPhoneNumber(value)
+    }
+    
+    setFormData(prev => ({ ...prev, [field]: processedValue }))
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[field as keyof typeof validationErrors]) {
+      setValidationErrors(prev => ({ ...prev, [field]: '' }))
+    }
+  }
+
+  const handleFieldBlur = (field: string, value: string) => {
+    // Validate on blur (when user tabs out)
+    let isValid = true
+    let errorMessage = ''
+    
+    switch (field) {
+      case 'clientName':
+        isValid = validateName(value)
+        if (!isValid && value.length > 0) errorMessage = 'Name must be 2-50 characters, letters only'
+        break
+      case 'clientEmail':
+        isValid = validateEmail(value)
+        if (!isValid && value.length > 0) errorMessage = 'Please enter a valid email address'
+        break
+      case 'clientPhone':
+        // For phone validation, check the unformatted number
+        const unformattedPhone = value.replace(/\D/g, '')
+        isValid = validatePhone(unformattedPhone)
+        if (!isValid && unformattedPhone.length > 0) errorMessage = 'Please enter a valid 10-digit phone number'
+        break
+      case 'companyName':
+        isValid = validateCompany(value)
+        if (!isValid && value.length > 0) errorMessage = 'Company name must be 2-100 characters'
+        break
+      case 'description':
+        isValid = validateDescription(value)
+        if (!isValid && value.length > 0) errorMessage = 'Description must be 60-2000 characters'
+        break
+    }
+    
+    if (!isValid && value.length > 0) {
+      setValidationErrors(prev => ({ ...prev, [field]: errorMessage }))
+    }
   }
 
   if (showLocationPrompt) {
@@ -264,7 +407,15 @@ export default function BookingSection() {
   }
 
   return (
-    <div className="text-white">
+    <>
+      <Modal
+        isOpen={modal.isOpen}
+        onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
+        title={modal.title}
+        message={modal.message}
+        type={modal.type}
+      />
+      <div className="text-white">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -274,75 +425,149 @@ export default function BookingSection() {
         <h2 className="text-4xl sm:text-5xl font-bold mb-6 text-white">
           Book an Engineer
         </h2>
-        <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-          Found {state.engineers.length} engineer{state.engineers.length !== 1 ? 's' : ''} in your area
-        </p>
         {state.location?.zipCode && (
           <p className="text-gray-400 mt-2">Location: {state.location.zipCode}</p>
         )}
       </motion.div>
 
       {!state.showBookingForm ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {state.engineers.map((engineer, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 max-w-7xl mx-auto px-4">
+          {state.engineers.slice(0, screenSize.maxEngineers).map((engineer, index) => (
             <motion.div
               key={engineer._id}
               initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              whileInView={{ opacity: engineer.isLocal ? 1 : 0.4, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
-              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6 hover:bg-gray-800/70 transition-all duration-300"
+              className={`w-full min-w-0 h-[700px] border rounded-3xl overflow-hidden transition-all duration-300 shadow-xl ${
+                engineer.isLocal 
+                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 cursor-pointer' 
+                  : 'bg-gray-900 border-gray-800 cursor-not-allowed grayscale'
+              }`}
             >
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-gray-700 rounded-full flex items-center justify-center mr-4">
-                  <User className="w-6 h-6 text-gray-300" />
+              <div className="flex flex-col h-full relative">
+                {/* Photo Section */}
+                <div className="relative h-64">
+                  {engineer.photo ? (
+                    <img 
+                      src={`/${engineer.photo}`} 
+                      alt={engineer.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gray-700 flex items-center justify-center">
+                      <User className="w-24 h-24 text-gray-300" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                    <div className="flex items-center text-white">
+                      <span className="text-lg font-bold">${(engineer.rate / 60).toFixed(1)}/min</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold">{engineer.name}</h3>
-                  <div className="flex items-center text-yellow-400">
-                    <Star className="w-4 h-4 mr-1" />
-                    <span className="text-sm">4.9 (23 reviews)</span>
+
+                {/* Content Section */}
+                <div className="p-6 flex-1 flex flex-col">
+                  <div className="space-y-3 flex-1">
+                    <div className="space-y-1">
+                      <div className="flex items-baseline justify-between">
+                        <div>
+                          <h3 className="text-lg font-bold text-white">{engineer.name}</h3>
+                          <div className="flex items-center text-gray-400 text-sm">
+                            <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                            <span className="truncate">{engineer.location.address}</span>
+                            {engineer.distance && (
+                              <span className={`ml-2 px-2 py-1 rounded-full text-xs flex-shrink-0 ${
+                                engineer.isLocal 
+                                  ? 'bg-green-500/20 text-green-400' 
+                                  : 'bg-orange-500/20 text-orange-400'
+                              }`}>
+                                {engineer.distance.toFixed(0)}mi
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {engineer.yearsExperience && (
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center justify-center w-10 h-10 bg-blue-500/20 border border-blue-400/30 rounded-full">
+                              <span className="text-sm font-bold text-blue-300">{engineer.yearsExperience}</span>
+                            </div>
+                            <span className="text-xs text-blue-400">exp</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {engineer.bio && (
+                      <p className="text-gray-300 text-sm leading-relaxed">
+                        {engineer.bio}
+                      </p>
+                    )}
+
+
+                    {engineer.skills && engineer.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {engineer.skills.slice(0, 6).map((skill, i) => (
+                          <span key={i} className="px-3 py-1.5 bg-green-500/20 text-green-300 text-xs rounded-full font-medium">
+                            {skill}
+                          </span>
+                        ))}
+                        {engineer.skills.length > 6 && (
+                          <span className="px-3 py-1.5 bg-gray-500/20 text-gray-400 text-xs rounded-full">
+                            +{engineer.skills.length - 6}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {engineer.services && engineer.services.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">
+                          I can help with
+                        </h4>
+                        <div className="flex flex-wrap gap-1.5 max-h-12 overflow-hidden">
+                          {engineer.services.slice(0, 8).map((service, i) => (
+                            <span key={i} className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full font-medium">
+                              {service}
+                            </span>
+                          ))}
+                          {engineer.services.length > 8 && (
+                            <span className="px-2 py-1 bg-gray-500/20 text-gray-400 text-xs rounded-full">
+                              +{engineer.services.length - 8}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Button anchored to bottom */}
+                  <div className="mt-auto pt-4">
+                    <button
+                      onClick={() => {
+                        if (engineer.isLocal) {
+                          setState(prev => ({ 
+                            ...prev, 
+                            selectedEngineer: engineer, 
+                            showBookingForm: true 
+                          }))
+                        }
+                      }}
+                      disabled={!engineer.isLocal}
+                      className={`w-full py-4 rounded-xl font-bold text-sm transition-all duration-300 transform ${engineer.isLocal ? 'hover:scale-105 active:scale-95 hover:shadow-lg' : ''} ${
+                        engineer.isLocal
+                          ? 'bg-white text-gray-900 hover:bg-gray-100 cursor-pointer'
+                          : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {engineer.isLocal 
+                        ? `Book ${engineer.name.split(' ')[0]} Now`
+                        : `Not Available in Your Area`
+                      }
+                    </button>
                   </div>
                 </div>
               </div>
-
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center text-gray-300">
-                  <DollarSign className="w-4 h-4 mr-2 text-gray-400" />
-                  <span>${engineer.hourlyRate}/hour</span>
-                </div>
-                <div className="flex items-center text-gray-300">
-                  <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                  <span>{engineer.location.address || engineer.location.zipCode}</span>
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <h4 className="text-sm font-medium text-gray-400 mb-2">Skills</h4>
-                <div className="flex flex-wrap gap-2">
-                  {engineer.skills.slice(0, 3).map((skill, i) => (
-                    <span key={i} className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full">
-                      {skill}
-                    </span>
-                  ))}
-                  {engineer.skills.length > 3 && (
-                    <span className="px-2 py-1 bg-gray-600/50 text-gray-400 text-xs rounded-full">
-                      +{engineer.skills.length - 3} more
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <button
-                onClick={() => setState(prev => ({ 
-                  ...prev, 
-                  selectedEngineer: engineer, 
-                  showBookingForm: true 
-                }))}
-                className="w-full bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white py-3 rounded-lg font-medium transition-all duration-300"
-              >
-                Book Now
-              </button>
             </motion.div>
           ))}
         </div>
@@ -350,104 +575,191 @@ export default function BookingSection() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-2xl mx-auto bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-8"
+          className="max-w-2xl mx-auto bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden"
         >
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-semibold mb-2">
-              Book session with {state.selectedEngineer?.name}
+          {/* Header */}
+          <div className="bg-gray-800 p-6 text-center">
+            <h3 className="text-2xl font-bold text-white mb-1">
+              {state.selectedEngineer?.name}
             </h3>
-            <p className="text-gray-300">${state.selectedEngineer?.hourlyRate}/hour</p>
+            <p className="text-gray-300">${state.selectedEngineer?.rate ? (state.selectedEngineer.rate / 60).toFixed(1) : '0'}/min</p>
           </div>
 
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Date</label>
-                <input
-                  type="date"
-                  value={state.selectedDate}
-                  min={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => setState(prev => ({ ...prev, selectedDate: e.target.value }))}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                />
+          <div className="p-8 space-y-6">
+            {/* Contact Info */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <input
+                    type="text"
+                    value={formData.clientName}
+                    onChange={(e) => handleFieldChange('clientName', e.target.value)}
+                    onBlur={(e) => handleFieldBlur('clientName', e.target.value)}
+                    className={`w-full bg-gray-700 border-0 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${validationErrors.clientName ? 'focus:ring-red-500 ring-1 ring-red-500' : 'focus:ring-gray-500'}`}
+                    placeholder="First name"
+                  />
+                  {validationErrors.clientName && (
+                    <p className="text-red-400 text-xs mt-1">{validationErrors.clientName}</p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="text"
+                    value={formData.companyName || ''}
+                    onChange={(e) => handleFieldChange('companyName', e.target.value)}
+                    onBlur={(e) => handleFieldBlur('companyName', e.target.value)}
+                    className={`w-full bg-gray-700 border-0 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${validationErrors.companyName ? 'focus:ring-red-500 ring-1 ring-red-500' : 'focus:ring-gray-500'}`}
+                    placeholder="Company name"
+                  />
+                  {validationErrors.companyName && (
+                    <p className="text-red-400 text-xs mt-1">{validationErrors.companyName}</p>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Time</label>
-                <select
-                  value={state.selectedTime}
-                  onChange={(e) => setState(prev => ({ ...prev, selectedTime: e.target.value }))}
-                  className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <input
+                    type="email"
+                    value={formData.clientEmail}
+                    onChange={(e) => handleFieldChange('clientEmail', e.target.value)}
+                    onBlur={(e) => handleFieldBlur('clientEmail', e.target.value)}
+                    className={`w-full bg-gray-700 border-0 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${validationErrors.clientEmail ? 'focus:ring-red-500 ring-1 ring-red-500' : 'focus:ring-gray-500'}`}
+                    placeholder="Email"
+                  />
+                  {validationErrors.clientEmail && (
+                    <p className="text-red-400 text-xs mt-1">{validationErrors.clientEmail}</p>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="tel"
+                    value={formData.clientPhone}
+                    onChange={(e) => handleFieldChange('clientPhone', e.target.value)}
+                    onBlur={(e) => handleFieldBlur('clientPhone', e.target.value)}
+                    className={`w-full bg-gray-700 border-0 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 ${validationErrors.clientPhone ? 'focus:ring-red-500 ring-1 ring-red-500' : 'focus:ring-gray-500'}`}
+                    placeholder="Phone"
+                  />
+                  {validationErrors.clientPhone && (
+                    <p className="text-red-400 text-xs mt-1">{validationErrors.clientPhone}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Timing Options */}
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold text-white">When?</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => setState(prev => ({ ...prev, selectedDate: 'asap', selectedTime: '' }))}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    state.selectedDate === 'asap'
+                      ? 'border-white bg-white/10 text-white'
+                      : 'border-gray-600 bg-gray-700/50 text-gray-300 hover:border-gray-500'
+                  }`}
                 >
-                  <option value="">Select time</option>
-                  {generateTimeSlots().map(time => (
-                    <option key={time} value={time}>{time}</option>
-                  ))}
-                </select>
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">⚡</div>
+                    <div className="font-semibold">ASAP</div>
+                    <div className="text-xs opacity-80">Right now</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setState(prev => ({ ...prev, selectedDate: new Date().toISOString().split('T')[0] }))}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    state.selectedDate !== 'asap' && state.selectedDate !== ''
+                      ? 'border-white bg-white/10 text-white'
+                      : 'border-gray-600 bg-gray-700/50 text-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="text-2xl mb-1">📅</div>
+                    <div className="font-semibold">Schedule</div>
+                    <div className="text-xs opacity-80">Pick time</div>
+                  </div>
+                </button>
               </div>
+              
+              {state.selectedDate !== 'asap' && state.selectedDate !== '' && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <input
+                    type="date"
+                    value={state.selectedDate}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setState(prev => ({ ...prev, selectedDate: e.target.value }))}
+                    className="w-full bg-gray-700 border-0 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <select
+                    value={state.selectedTime}
+                    onChange={(e) => setState(prev => ({ ...prev, selectedTime: e.target.value }))}
+                    className="w-full bg-gray-700 border-0 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Time</option>
+                    {generateTimeSlots().map(time => (
+                      <option key={time} value={time}>{time}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
+            {/* Description */}
             <div>
-              <label className="block text-sm font-medium mb-2">Your Name</label>
-              <input
-                type="text"
-                value={formData.clientName}
-                onChange={(e) => setFormData(prev => ({ ...prev, clientName: e.target.value }))}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                placeholder="Full name"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Email</label>
-              <input
-                type="email"
-                value={formData.clientEmail}
-                onChange={(e) => setFormData(prev => ({ ...prev, clientEmail: e.target.value }))}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                placeholder="your@email.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Phone</label>
-              <input
-                type="tel"
-                value={formData.clientPhone}
-                onChange={(e) => setFormData(prev => ({ ...prev, clientPhone: e.target.value }))}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                placeholder="(555) 123-4567"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">What do you need help with?</label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                onChange={(e) => handleFieldChange('description', e.target.value)}
+                onBlur={(e) => handleFieldBlur('description', e.target.value)}
                 rows={4}
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                placeholder="Describe your project or what you need help with..."
+                className={`w-full bg-gray-700 border-0 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 resize-none ${validationErrors.description ? 'focus:ring-red-500 ring-1 ring-red-500' : 'focus:ring-gray-500'}`}
+                placeholder="What do you need help with? (minimum 60 characters)"
               />
+              {validationErrors.description && (
+                <p className="text-red-400 text-xs mt-1">{validationErrors.description}</p>
+              )}
+              <div className="text-right text-xs mt-1">
+                <span className={formData.description.length >= 60 ? 'text-green-400' : 'text-gray-400'}>
+                  {formData.description.length}/60 characters
+                </span>
+              </div>
             </div>
 
-            <div className="flex space-x-4">
+            {/* Actions */}
+            <div className="flex gap-4 pt-4">
               <button
                 onClick={() => setState(prev => ({ ...prev, showBookingForm: false }))}
-                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-lg font-medium transition-colors"
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-4 rounded-xl font-semibold transition-colors"
               >
-                Back
+                Cancel
               </button>
               <button
                 onClick={handleBooking}
-                disabled={!state.selectedDate || !state.selectedTime || !formData.clientName || !formData.clientEmail}
-                className="flex-1 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 disabled:from-gray-600 disabled:to-gray-600 text-white py-3 rounded-lg font-medium transition-all duration-300 disabled:cursor-not-allowed"
+                disabled={
+                  state.isSubmitting ||
+                  !state.selectedDate || 
+                  (state.selectedDate !== 'asap' && !state.selectedTime) || 
+                  !validateName(formData.clientName) || 
+                  !validateCompany(formData.companyName) ||
+                  !validateEmail(formData.clientEmail) || 
+                  !validatePhone(formData.clientPhone.replace(/\D/g, '')) ||
+                  !validateDescription(formData.description) ||
+                  Object.values(validationErrors).some(error => error !== '')
+                }
+                className="flex-1 bg-white text-gray-900 hover:bg-gray-100 active:bg-gray-200 disabled:bg-gray-600 disabled:text-gray-400 py-4 rounded-xl font-semibold transition-all duration-300 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 flex items-center justify-center"
               >
-                Confirm Booking
+                {state.isSubmitting ? (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full mr-2"></div>
+                    Requesting...
+                  </>
+                ) : (
+                  'Confirm'
+                )}
               </button>
             </div>
           </div>
         </motion.div>
       )}
     </div>
+    </>
   )
 }

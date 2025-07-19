@@ -25,10 +25,10 @@ export async function GET(request: NextRequest) {
     const allEngineers = await EngineersModel.findByLocation(userLat, userLng, radius)
     console.log(`Found ${allEngineers.length} total engineers`)
     
-    const nearbyEngineers = allEngineers.filter(engineer => {
+    const engineersWithDistance = allEngineers.map(engineer => {
       if (!engineer.location.coordinates) {
         console.log(`Engineer ${engineer.name} has no coordinates`)
-        return false
+        return { ...engineer, distance: 999, isLocal: false }
       }
       
       const distance = calculateDistance(
@@ -39,27 +39,27 @@ export async function GET(request: NextRequest) {
       )
       
       console.log(`Engineer ${engineer.name} is ${distance.toFixed(2)} miles away`)
-      return distance <= radius
+      const isLocal = distance <= engineer.radius
+      
+      return { ...engineer, distance, isLocal }
     })
     
-    console.log(`Found ${nearbyEngineers.length} engineers within ${radius} miles`)
-
-    // Format the response
-    const formattedEngineers = nearbyEngineers.map(engineer => ({
-      _id: engineer._id,
-      name: engineer.name,
-      skills: engineer.skills,
-      hourlyRate: engineer.rate || engineer.hourlyRate, // Use 'rate' field from MongoDB
-      location: {
-        ...engineer.location,
-        address: engineer.location.address // Make sure address is included
-      },
-      availability: engineer.availability
-    }))
+    // Sort by distance, show local first, then closest non-local
+    const sortedEngineers = engineersWithDistance
+      .sort((a, b) => {
+        if (a.isLocal && !b.isLocal) return -1
+        if (!a.isLocal && b.isLocal) return 1
+        return a.distance - b.distance
+      })
+      .slice(0, 3) // Show max 3 engineers
+    
+    const localCount = sortedEngineers.filter(e => e.isLocal).length
+    console.log(`Showing ${sortedEngineers.length} engineers (${localCount} local, ${sortedEngineers.length - localCount} non-local)`)
 
     return NextResponse.json({
-      engineers: formattedEngineers,
-      count: formattedEngineers.length
+      engineers: sortedEngineers,
+      count: sortedEngineers.length,
+      localCount
     })
   } catch (error) {
     console.error('Error fetching engineers:', error)
@@ -89,8 +89,7 @@ export async function POST(request: NextRequest) {
       skills,
       hourlyRate,
       location,
-      availability: availability || [],
-      isActive: true
+      availability: availability || []
     })
 
     return NextResponse.json({

@@ -1,0 +1,4 @@
+[ZoneTransfer]
+ZoneId=3
+ReferrerUrl=https://cloudconvert.com/
+HostUrl=https://eu-central.storage.cloudconvert.com/tasks/c722a88c-f3fd-4ea0-89e8-9245000316e5/chris-headshot.webp?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=cloudconvert-production%2F20250719%2Ffra%2Fs3%2Faws4_request&X-Amz-Date=20250719T142505Z&X-Amz-Expires=86400&X-Amz-Signature=199502e3d9be99796ed55ee833520aecb2387c778b93aea1e4997aa245659a0b&X-Amz-SignedHeaders=host&response-content-disposition=attachment%3B%20filename%3D%22chris-headshot.webp%22&response-content-type=image%2Fwebp&x-id=GetObject

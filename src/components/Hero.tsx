@@ -38,25 +38,46 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-12 max-w-4xl mx-auto"
         >
-          <div className="flex flex-col items-center space-y-3">
-            <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-              <Zap className="w-6 h-6 text-gray-300" />
+          <div className="group relative flex flex-col items-center space-y-3 cursor-pointer">
+            <div className="w-12 h-12 bg-gray-700 group-hover:bg-gray-600 rounded-lg flex items-center justify-center transition-all duration-300">
+              <Zap className="w-6 h-6 text-gray-300 group-hover:text-white" />
             </div>
-            <span className="text-gray-300 font-medium">Instant Access</span>
+            <span className="text-gray-300 font-medium group-hover:text-white transition-colors">Instant Access</span>
+            
+            {/* Hover details */}
+            <div className="absolute top-16 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-800 rounded-lg p-4 shadow-xl z-10 w-64">
+              <p className="text-sm text-gray-200">
+                Book engineers immediately or schedule for later. No waiting lists, no lengthy hiring process.
+              </p>
+            </div>
           </div>
           
-          <div className="flex flex-col items-center space-y-3">
-            <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-              <Code className="w-6 h-6 text-gray-300" />
+          <div className="group relative flex flex-col items-center space-y-3 cursor-pointer">
+            <div className="w-12 h-12 bg-gray-700 group-hover:bg-gray-600 rounded-lg flex items-center justify-center transition-all duration-300">
+              <Code className="w-6 h-6 text-gray-300 group-hover:text-white" />
             </div>
-            <span className="text-gray-300 font-medium">Expert Engineers</span>
+            <span className="text-gray-300 font-medium group-hover:text-white transition-colors">Expert Engineers</span>
+            
+            {/* Hover details */}
+            <div className="absolute top-16 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-800 rounded-lg p-4 shadow-xl z-10 w-64">
+              <p className="text-sm text-gray-200">
+                Company founders with years of experience across multiple technologies and industries.
+              </p>
+            </div>
           </div>
           
-          <div className="flex flex-col items-center space-y-3">
-            <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-gray-300" />
+          <div className="group relative flex flex-col items-center space-y-3 cursor-pointer">
+            <div className="w-12 h-12 bg-gray-700 group-hover:bg-gray-600 rounded-lg flex items-center justify-center transition-all duration-300">
+              <Users className="w-6 h-6 text-gray-300 group-hover:text-white" />
             </div>
-            <span className="text-gray-300 font-medium">Local Co-working</span>
+            <span className="text-gray-300 font-medium group-hover:text-white transition-colors">Local Co-working</span>
+            
+            {/* Hover details */}
+            <div className="absolute top-16 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gray-800 rounded-lg p-4 shadow-xl z-10 w-64">
+              <p className="text-sm text-gray-200">
+                Engineers already working in your exact co-working space. No travel time, immediate availability.
+              </p>
+            </div>
           </div>
         </motion.div>
 
@@ -80,22 +101,6 @@ export default function Hero() {
           </button>
         </motion.div>
 
-        {/* Trusted by section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-16 pt-8 border-t border-gray-800"
-        >
-          <p className="text-gray-400 text-sm mb-6">Trusted by startups and enterprises</p>
-          <div className="flex justify-center items-center space-x-8 opacity-60">
-            {/* Placeholder for company logos */}
-            <div className="w-24 h-8 bg-gray-700 rounded opacity-50" />
-            <div className="w-24 h-8 bg-gray-700 rounded opacity-50" />
-            <div className="w-24 h-8 bg-gray-700 rounded opacity-50" />
-            <div className="w-24 h-8 bg-gray-700 rounded opacity-50" />
-          </div>
-        </motion.div>
       </div>
     </div>
   )
