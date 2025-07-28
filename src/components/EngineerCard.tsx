@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, User, ArrowRight, Video, Monitor } from 'lucide-react'
+import { MapPin, User, ArrowRight, Video } from 'lucide-react'
 import { Engineer } from '@/types/global'
 
 interface EngineerCardProps {
@@ -41,7 +41,7 @@ export default function EngineerCard({ engineer, index, onSelect }: EngineerCard
           )}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
             <div className="flex items-center text-white">
-              <span className="text-lg font-bold">${((engineer.isRemote ? engineer.remoteRate : (engineer.localRate || engineer.rate)) / 60).toFixed(1)}/min</span>
+              <span className="text-lg font-bold">${((engineer.isRemote ? (engineer.remoteRate || 0) : (engineer.localRate || 0)) / 60).toFixed(1)}/min</span>
             </div>
           </div>
         </div>

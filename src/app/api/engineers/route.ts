@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { EngineersModel } from '@/lib/models'
 import { calculateDistance } from '@/lib/geolocation'
-import { Engineer } from '@/types/global'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -64,8 +63,9 @@ export async function GET(request: NextRequest) {
       console.log(`Found ${remoteEngineers.length} remote engineers`)
       
       // Mark them as remote and add to final list
-      finalEngineers = remoteEngineers.map((engineer: Engineer) => ({
+      finalEngineers = remoteEngineers.map((engineer) => ({
         ...engineer,
+        _id: engineer._id || '',
         distance: 0,
         isLocal: false,
         isRemote: true

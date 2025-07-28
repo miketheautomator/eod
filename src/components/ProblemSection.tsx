@@ -19,7 +19,7 @@ export default function ProblemSection() {
           Traditional Hiring is Broken
         </h2>
         <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-          While you're interviewing for months, your competition is shipping features.
+          While you&apos;re interviewing for months, your competition is shipping features.
         </p>
       </motion.div>
 

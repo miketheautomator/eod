@@ -53,7 +53,7 @@ export default function WhySection() {
                   <Clock className="w-6 h-6 text-gray-400 mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-white mb-1">Hiring Takes Forever</h4>
-                    <p className="text-gray-400 text-sm">2-4 months to find, interview, and onboard senior engineers. Your competition ships features while you're still interviewing.</p>
+                    <p className="text-gray-400 text-sm">2-4 months to find, interview, and onboard senior engineers. Your competition ships features while you&apos;re still interviewing.</p>
                   </div>
                 </div>
               </div>
@@ -73,7 +73,7 @@ export default function WhySection() {
                   <Building className="w-6 h-6 text-gray-400 mt-1 flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold text-white mb-1">Skill Mismatches</h4>
-                    <p className="text-gray-400 text-sm">Need React today, AI next month, DevOps next quarter? Good luck finding one person who's expert at everything.</p>
+                    <p className="text-gray-400 text-sm">Need React today, AI next month, DevOps next quarter? Good luck finding one person who&apos;s expert at everything.</p>
                   </div>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function WhySection() {
             <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-xl p-6 text-center">
               <Users className="w-8 h-8 text-purple-400 mx-auto mb-3" />
               <h4 className="font-semibold text-white mb-2">Team Augmentation</h4>
-              <p className="text-gray-400 text-sm">Temporarily boost your team's capacity for big projects or tight deadlines</p>
+              <p className="text-gray-400 text-sm">Temporarily boost your team&apos;s capacity for big projects or tight deadlines</p>
             </div>
           </div>
         </motion.div>

@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
     try {
       await sendBookingEmail({
         engineerName: engineer.name,
-        engineerRate: engineer.rate,
+        engineerRate: engineer.localRate || engineer.remoteRate || 0,
         clientName,
         clientEmail,
         clientPhone,

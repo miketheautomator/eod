@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Zap, Gauge } from 'lucide-react'
+import { ArrowRight, Gauge } from 'lucide-react'
 import { scrollToNextSection } from './ScrollSnapWrapper'
 import { SectionContainer } from './ui/SectionContainer'
 

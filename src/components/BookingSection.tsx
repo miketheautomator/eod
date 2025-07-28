@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { getCurrentLocation } from '@/lib/geolocation'
 import { Engineer } from '@/types/global'
-import { MapPin, DollarSign, Star, User, ArrowRight } from 'lucide-react'
+import { MapPin } from 'lucide-react'
 import { validateEmail, validatePhone, validateName, validateCompany, validateDescription } from '@/lib/validation'
 import Modal from './Modal'
 import EngineerCard from './EngineerCard'
@@ -171,7 +171,7 @@ export default function BookingSection() {
         body: JSON.stringify({
           engineerId: state.selectedEngineer._id,
           engineerName: state.selectedEngineer.name,
-          engineerRate: state.selectedEngineer.isRemote ? state.selectedEngineer.remoteRate : (state.selectedEngineer.localRate || state.selectedEngineer.rate),
+          engineerRate: state.selectedEngineer.isRemote ? (state.selectedEngineer.remoteRate || 0) : (state.selectedEngineer.localRate || 0),
           clientName: formData.clientName,
           clientEmail: formData.clientEmail,
           clientPhone: formData.clientPhone.replace(/\D/g, ''), // Send unformatted phone number
@@ -480,7 +480,7 @@ export default function BookingSection() {
             <h3 className="text-2xl font-bold text-white mb-1">
               {state.selectedEngineer?.name}
             </h3>
-            <p className="text-gray-300">${state.selectedEngineer ? ((state.selectedEngineer.isRemote ? state.selectedEngineer.remoteRate : (state.selectedEngineer.localRate || state.selectedEngineer.rate)) / 60).toFixed(1) : '0'}/min</p>
+            <p className="text-gray-300">${state.selectedEngineer ? ((state.selectedEngineer.isRemote ? (state.selectedEngineer.remoteRate || 0) : (state.selectedEngineer.localRate || 0)) / 60).toFixed(1) : '0'}/min</p>
           </div>
 
           <div className="p-8 space-y-6">

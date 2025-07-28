@@ -49,8 +49,8 @@ export class EngineersModel {
         localCount++
       }
       // Fallback to old rate field if exists
-      if (!engineer.remoteRate && !engineer.localRate && engineer.rate && engineer.rate > 0) {
-        totalLocalRate += engineer.rate
+      if (!engineer.remoteRate && !engineer.localRate && (engineer as any).rate && (engineer as any).rate > 0) {
+        totalLocalRate += (engineer as any).rate
         localCount++
       }
     })

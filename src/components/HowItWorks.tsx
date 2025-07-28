@@ -3,7 +3,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { Zap, Clock, DollarSign, Code, Shield, TrendingUp } from 'lucide-react'
-import { scrollToNextSection } from './ScrollSnapWrapper'
 
 export default function HowItWorks() {
   return (
