@@ -20,6 +20,49 @@ export class EngineersModel {
     return collection.find({}).toArray()
   }
 
+  static async findRemoteEngineers() {
+    const collection = await this.getCollection()
+    return collection.find({ 
+      remoteRate: { $exists: true, $gt: 0 },
+      status: 'active'
+    }).toArray()
+  }
+
+  static async getAveragePricing() {
+    const collection = await this.getCollection()
+    const engineers = await collection.find({ status: 'active' }).toArray()
+    
+    if (engineers.length === 0) return null
+    
+    let totalRemoteRate = 0
+    let totalLocalRate = 0
+    let remoteCount = 0
+    let localCount = 0
+    
+    engineers.forEach(engineer => {
+      if (engineer.remoteRate && engineer.remoteRate > 0) {
+        totalRemoteRate += engineer.remoteRate
+        remoteCount++
+      }
+      if (engineer.localRate && engineer.localRate > 0) {
+        totalLocalRate += engineer.localRate
+        localCount++
+      }
+      // Fallback to old rate field if exists
+      if (!engineer.remoteRate && !engineer.localRate && engineer.rate && engineer.rate > 0) {
+        totalLocalRate += engineer.rate
+        localCount++
+      }
+    })
+    
+    return {
+      avgRemoteRate: remoteCount > 0 ? Math.round(totalRemoteRate / remoteCount) : null,
+      avgLocalRate: localCount > 0 ? Math.round(totalLocalRate / localCount) : null,
+      avgRemotePerMinute: remoteCount > 0 ? Math.round((totalRemoteRate / remoteCount) / 60) : null,
+      avgLocalPerMinute: localCount > 0 ? Math.round((totalLocalRate / localCount) / 60) : null,
+    }
+  }
+
   static async findById(id: string) {
     const collection = await this.getCollection()
     return collection.findOne({ _id: new ObjectId(id) })

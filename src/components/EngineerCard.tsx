@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, User, ArrowRight } from 'lucide-react'
+import { MapPin, User, ArrowRight, Video, Monitor } from 'lucide-react'
 import { Engineer } from '@/types/global'
 
 interface EngineerCardProps {
@@ -16,11 +16,11 @@ export default function EngineerCard({ engineer, index, onSelect }: EngineerCard
     <motion.div
       key={engineer._id?.toString()}
       initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: engineer.isLocal ? 1 : 0.7, y: 0 }}
+      whileInView={{ opacity: (engineer.isLocal || engineer.isRemote) ? 1 : 0.7, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1 }}
-      className={`w-full min-w-0 h-[700px] border rounded-3xl overflow-hidden transition-all duration-300 shadow-xl ${
-        engineer.isLocal 
+      className={`w-full max-w-md min-w-0 h-[700px] border rounded-3xl overflow-hidden transition-all duration-300 shadow-xl ${
+        engineer.isLocal || engineer.isRemote
           ? 'bg-white border-gray-300 hover:bg-gray-50 cursor-pointer' 
           : 'bg-gray-100 border-gray-300 cursor-not-allowed grayscale'
       }`}
@@ -41,7 +41,7 @@ export default function EngineerCard({ engineer, index, onSelect }: EngineerCard
           )}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
             <div className="flex items-center text-white">
-              <span className="text-lg font-bold">${(engineer.rate / 60).toFixed(1)}/min</span>
+              <span className="text-lg font-bold">${((engineer.isRemote ? engineer.remoteRate : (engineer.localRate || engineer.rate)) / 60).toFixed(1)}/min</span>
             </div>
           </div>
         </div>
@@ -55,16 +55,30 @@ export default function EngineerCard({ engineer, index, onSelect }: EngineerCard
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{engineer.name}</h3>
                   <div className="flex items-center text-gray-600 text-sm">
-                    <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
-                    <span className="truncate">{engineer.location.address}</span>
-                    {engineer.distance && (
-                      <span className={`ml-2 px-2 py-1 rounded-full text-xs flex-shrink-0 ${
-                        engineer.isLocal 
-                          ? 'bg-green-500/20 text-green-400' 
-                          : 'bg-orange-500/20 text-orange-400'
-                      }`}>
-                        {engineer.distance.toFixed(0)}mi
-                      </span>
+                    {engineer.isRemote ? (
+                      <>
+                        <Video className="w-3 h-3 mr-1 flex-shrink-0" />
+                        <span className="truncate">Remote Session</span>
+                        {engineer.meetingPlatforms && engineer.meetingPlatforms.length > 0 && (
+                          <span className="ml-2 px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs flex-shrink-0">
+                            {engineer.meetingPlatforms.map(p => p === 'zoom' ? 'Zoom' : p === 'teams' ? 'Teams' : 'Meet').join(' / ')}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-3 h-3 mr-1 flex-shrink-0" />
+                        <span className="truncate">{engineer.location.address}</span>
+                        {engineer.distance !== undefined && (
+                          <span className={`ml-2 px-2 py-1 rounded-full text-xs flex-shrink-0 ${
+                            engineer.isLocal 
+                              ? 'bg-green-500/20 text-green-400' 
+                              : 'bg-orange-500/20 text-orange-400'
+                          }`}>
+                            {engineer.distance.toFixed(0)}mi
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -125,13 +139,13 @@ export default function EngineerCard({ engineer, index, onSelect }: EngineerCard
           <div className="pt-4">
             <button
               onClick={() => {
-                if (engineer.isLocal) {
+                if (engineer.isLocal || engineer.isRemote) {
                   onSelect(engineer)
                 }
               }}
-              disabled={!engineer.isLocal}
+              disabled={!engineer.isLocal && !engineer.isRemote}
               className={`group w-full py-4 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center justify-center space-x-2 ${
-                engineer.isLocal
+                engineer.isLocal || engineer.isRemote
                   ? 'bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white cursor-pointer'
                   : 'text-gray-500 cursor-not-allowed'
               }`}
@@ -139,10 +153,12 @@ export default function EngineerCard({ engineer, index, onSelect }: EngineerCard
               <span>
                 {engineer.isLocal 
                   ? `Book ${engineer.name.split(' ')[0]} Now`
+                  : engineer.isRemote
+                  ? `Book Remote Session`
                   : `Not Available in Your Area`
                 }
               </span>
-              {engineer.isLocal && (
+              {(engineer.isLocal || engineer.isRemote) && (
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               )}
             </button>

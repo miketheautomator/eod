@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { EngineersModel } from '@/lib/models'
 import { calculateDistance } from '@/lib/geolocation'
+import { Engineer } from '@/types/global'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -56,10 +57,26 @@ export async function GET(request: NextRequest) {
     const localCount = sortedEngineers.filter(e => e.isLocal).length
     console.log(`Showing ${sortedEngineers.length} engineers (${localCount} local, ${sortedEngineers.length - localCount} non-local)`)
 
+    // If no local engineers found, fetch remote engineers from database
+    let finalEngineers = sortedEngineers
+    if (localCount === 0) {
+      const remoteEngineers = await EngineersModel.findRemoteEngineers()
+      console.log(`Found ${remoteEngineers.length} remote engineers`)
+      
+      // Mark them as remote and add to final list
+      finalEngineers = remoteEngineers.map((engineer: Engineer) => ({
+        ...engineer,
+        distance: 0,
+        isLocal: false,
+        isRemote: true
+      })).slice(0, 3) // Limit to 3 remote engineers
+    }
+
     return NextResponse.json({
-      engineers: sortedEngineers,
-      count: sortedEngineers.length,
-      localCount
+      engineers: finalEngineers,
+      count: finalEngineers.length,
+      localCount,
+      hasRemoteEngineers: localCount === 0
     })
   } catch (error) {
     console.error('Error fetching engineers:', error)
@@ -87,7 +104,7 @@ export async function POST(request: NextRequest) {
       name,
       email,
       skills,
-      rate: hourlyRate,
+      localRate: hourlyRate,
       location,
       availability: availability || [],
       radius: 25, // Default radius

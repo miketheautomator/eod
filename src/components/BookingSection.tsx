@@ -8,6 +8,7 @@ import { MapPin, DollarSign, Star, User, ArrowRight } from 'lucide-react'
 import { validateEmail, validatePhone, validateName, validateCompany, validateDescription } from '@/lib/validation'
 import Modal from './Modal'
 import EngineerCard from './EngineerCard'
+import { SectionContainer } from './ui/SectionContainer'
 
 interface BookingState {
   location: {
@@ -170,7 +171,7 @@ export default function BookingSection() {
         body: JSON.stringify({
           engineerId: state.selectedEngineer._id,
           engineerName: state.selectedEngineer.name,
-          engineerRate: state.selectedEngineer.rate,
+          engineerRate: state.selectedEngineer.isRemote ? state.selectedEngineer.remoteRate : (state.selectedEngineer.localRate || state.selectedEngineer.rate),
           clientName: formData.clientName,
           clientEmail: formData.clientEmail,
           clientPhone: formData.clientPhone.replace(/\D/g, ''), // Send unformatted phone number
@@ -310,105 +311,116 @@ export default function BookingSection() {
 
   if (showLocationPrompt) {
     return (
-      <div className="text-center text-white">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-8 max-w-2xl mx-auto"
-        >
-          <MapPin className="w-16 h-16 text-blue-400 mx-auto mb-6" />
-          <h3 className="text-2xl font-semibold mb-4">Find Engineers Near You</h3>
-          <p className="text-gray-300 mb-6">
-            We need to access your location to show you engineers in your area.
-          </p>
-          <p className="text-orange-300 text-sm mb-6 font-medium">
-            👆 Enable the browser location request above to see engineers in your area!
-          </p>
-          
-          <button 
-            onClick={detectLocationAndFetchEngineers}
-            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105"
+      <SectionContainer>
+        <div className="text-center text-white">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-blue-900/20 border border-blue-500/30 rounded-2xl p-8 max-w-2xl mx-auto"
           >
-            <MapPin className="w-5 h-5 inline mr-2" />
-            Share My Location
-          </button>
-          
-          <p className="text-gray-400 text-sm mt-4">
-            Your location is only used to find nearby engineers and is not stored.
-          </p>
-        </motion.div>
-      </div>
+            <MapPin className="w-16 h-16 text-blue-400 mx-auto mb-6" />
+            <h3 className="text-2xl font-semibold mb-4">Find Engineers Near You</h3>
+            <p className="text-gray-300 mb-6">
+              We need to access your location to show you engineers in your area.
+            </p>
+            <p className="text-orange-300 text-sm mb-6 font-medium">
+              👆 Enable the browser location request above to see engineers in your area!
+            </p>
+            
+            <button 
+              onClick={detectLocationAndFetchEngineers}
+              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105"
+            >
+              <MapPin className="w-5 h-5 inline mr-2" />
+              Share My Location
+            </button>
+            
+            <p className="text-gray-400 text-sm mt-4">
+              Your location is only used to find nearby engineers and is not stored.
+            </p>
+          </motion.div>
+        </div>
+      </SectionContainer>
     )
   }
 
   if (state.isLoading) {
     return (
-      <div className="text-center text-white">
-        <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-        <p className="text-gray-300">Finding engineers in your area...</p>
-        <p className="text-orange-300 text-sm mt-2">Enable the browser location request above to see engineers in your area!</p>
-      </div>
+      <SectionContainer>
+        <div className="text-center text-white">
+          <div className="animate-spin w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-300">Finding engineers in your area...</p>
+          <p className="text-orange-300 text-sm mt-2">Enable the browser location request above to see engineers in your area!</p>
+        </div>
+      </SectionContainer>
     )
   }
 
   if (state.error) {
     return (
-      <div className="text-center text-white">
-        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6 max-w-md mx-auto">
-          <p className="text-red-300 mb-4">{state.error}</p>
-          <button 
-            onClick={detectLocationAndFetchEngineers}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
-          >
-            Try Again
-          </button>
+      <SectionContainer>
+        <div className="text-center text-white">
+          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6 max-w-md mx-auto">
+            <p className="text-red-300 mb-4">{state.error}</p>
+            <button 
+              onClick={detectLocationAndFetchEngineers}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
-      </div>
+      </SectionContainer>
     )
   }
 
-  if (state.engineers.length === 0) {
+  // Check if we have remote engineers
+  const hasRemoteEngineers = state.engineers.some(e => e.isRemote)
+
+  if (state.engineers.length === 0 && !hasRemoteEngineers) {
     return (
-      <div className="text-center text-white">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-orange-900/20 border border-orange-500/30 rounded-2xl p-8 max-w-2xl mx-auto"
-        >
-          <MapPin className="w-16 h-16 text-orange-400 mx-auto mb-6" />
-          <h3 className="text-2xl font-semibold mb-4">No Engineers in Your Area Yet</h3>
-          <p className="text-gray-300 mb-6">
-            We don&apos;t have engineers within 50 miles of your location yet, but we&apos;re expanding rapidly!
-          </p>
-          <p className="text-gray-400 text-sm mb-6">
-            Your location: {state.location?.zipCode || 'Unknown'}
-          </p>
-          
-          {/* Early Access CTA */}
-          <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-            <h4 className="text-lg font-medium mb-4">Request Early Access</h4>
-            <p className="text-gray-300 text-sm mb-4">
-              Be the first to know when engineers are available in your area.
+      <SectionContainer>
+        <div className="text-center text-white">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-orange-900/20 border border-orange-500/30 rounded-2xl p-8 max-w-2xl mx-auto"
+          >
+            <MapPin className="w-16 h-16 text-orange-400 mx-auto mb-6" />
+            <h3 className="text-2xl font-semibold mb-4">No Engineers in Your Area Yet</h3>
+            <p className="text-gray-300 mb-6">
+              We don&apos;t have engineers within 50 miles of your location yet, but we&apos;re expanding rapidly!
             </p>
-            <button 
-              onClick={() => {
-                const earlyAccessSection = document.getElementById('early-access')
-                if (earlyAccessSection) {
-                  earlyAccessSection.scrollIntoView({ behavior: 'smooth' })
-                }
-              }}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300"
-            >
-              Get Early Access
-            </button>
-          </div>
-        </motion.div>
-      </div>
+            <p className="text-gray-400 text-sm mb-6">
+              Your location: {state.location?.zipCode || 'Unknown'}
+            </p>
+            
+            {/* Early Access CTA */}
+            <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+              <h4 className="text-lg font-medium mb-4">Request Early Access</h4>
+              <p className="text-gray-300 text-sm mb-4">
+                Be the first to know when engineers are available in your area.
+              </p>
+              <button 
+                onClick={() => {
+                  const earlyAccessSection = document.getElementById('early-access')
+                  if (earlyAccessSection) {
+                    earlyAccessSection.scrollIntoView({ behavior: 'smooth' })
+                  }
+                }}
+                className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300"
+              >
+                Get Early Access
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      </SectionContainer>
     )
   }
 
   return (
-    <>
+    <SectionContainer>
       <Modal
         isOpen={modal.isOpen}
         onClose={() => setModal(prev => ({ ...prev, isOpen: false }))}
@@ -416,8 +428,9 @@ export default function BookingSection() {
         message={modal.message}
         type={modal.type}
       />
-      <div className="text-white">
-      <motion.div
+      <div className="relative text-white">
+        <div className="relative z-10">
+          <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -429,10 +442,18 @@ export default function BookingSection() {
         {state.location?.zipCode && (
           <p className="text-gray-400 mt-2">Location: {state.location.zipCode}</p>
         )}
+        {hasRemoteEngineers && (
+          <div className="mt-6 bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 max-w-2xl mx-auto">
+            <p className="text-blue-300 font-medium">
+              <span className="text-2xl mr-2">💻</span>
+              No local engineers available - Book a remote session via Zoom or Microsoft Teams!
+            </p>
+          </div>
+        )}
       </motion.div>
 
       {!state.showBookingForm ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8 max-w-6xl mx-auto px-4">
+        <div className="flex flex-wrap justify-center gap-8 max-w-6xl mx-auto px-4">
           {state.engineers.slice(0, screenSize.maxEngineers).map((engineer, index) => (
             <EngineerCard
               key={engineer._id?.toString()}
@@ -459,10 +480,23 @@ export default function BookingSection() {
             <h3 className="text-2xl font-bold text-white mb-1">
               {state.selectedEngineer?.name}
             </h3>
-            <p className="text-gray-300">${state.selectedEngineer?.rate ? (state.selectedEngineer.rate / 60).toFixed(1) : '0'}/min</p>
+            <p className="text-gray-300">${state.selectedEngineer ? ((state.selectedEngineer.isRemote ? state.selectedEngineer.remoteRate : (state.selectedEngineer.localRate || state.selectedEngineer.rate)) / 60).toFixed(1) : '0'}/min</p>
           </div>
 
           <div className="p-8 space-y-6">
+            {/* Show meeting platform options for remote engineers */}
+            {state.selectedEngineer?.isRemote && state.selectedEngineer?.meetingPlatforms && (
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-xl p-4">
+                <p className="text-blue-300 text-sm font-medium mb-2">Remote Session Available Via:</p>
+                <div className="flex gap-2">
+                  {state.selectedEngineer.meetingPlatforms.map(platform => (
+                    <span key={platform} className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium">
+                      {platform === 'zoom' ? '🎥 Zoom' : platform === 'teams' ? '💼 Microsoft Teams' : '📹 Google Meet'}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Contact Info */}
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -636,7 +670,8 @@ export default function BookingSection() {
           </div>
         </motion.div>
       )}
-    </div>
-    </>
+        </div>
+      </div>
+    </SectionContainer>
   )
 }

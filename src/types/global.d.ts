@@ -6,7 +6,8 @@ export interface Engineer {
   email: string
   photo?: string
   skills: string[]
-  rate: number
+  localRate?: number
+  remoteRate?: number
   location: {
     zipCode: string
     address: string
@@ -29,6 +30,8 @@ export interface Engineer {
   services?: string[]
   distance?: number
   isLocal?: boolean
+  isRemote?: boolean
+  meetingPlatforms?: ('zoom' | 'teams' | 'meet')[]
 }
 
 export interface Appointment {
